@@ -7,6 +7,7 @@ export const individualUpdate = async (id, updatedData) => {
       },
       body: JSON.stringify(updatedData)
     });
+    console.log("ADSASFAFA",response)
 
     if (!response.ok) {
       throw new Error("Failed to edit individual image");

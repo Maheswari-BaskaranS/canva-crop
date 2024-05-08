@@ -5,11 +5,7 @@ export const getAllMasterImages = async () => {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    return data.data.map(item => ({
-      id: item.id,
-      mainImage: item.mainImage,
-      noOfCrops: item.noOfCrops
-    }));
+     return data.data
   } catch (error) {
     console.error("Error fetching master images:", error);
     throw error;

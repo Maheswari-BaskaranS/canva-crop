@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ModeEditOutlineIcon from "@mui/icons-material/ModeEditOutline";
@@ -10,6 +10,7 @@ import { deleteMasterImage } from "./services/MainImageAPI/deleteMasterImage";
 import { deleteIndividualImage } from "./services/cropDynamicAPI/deleteIndividualImage";
 import { individualgetbyId } from "./services/cropDynamicAPI/individualId";
 import { individualUpdate } from "./services/cropDynamicAPI/individualUpdate";
+import { createMasterImage } from "./services/MainImageAPI/createMasterImage";
 import {
   CCard,
   CCardBody,
@@ -22,16 +23,20 @@ import {
   CCardHeader,
 } from "@coreui/react";
 import EditIndividualImage from "./EditIndividualImage";
+import { maingetbyId } from "./services/MainImageAPI/maingetbyid";
 // Define EditIndividualImage component here
 
 const Main = () => {
-  const [type, setType] = useState('');
+  const [type, setType] = useState("");
   const navigate = useNavigate();
   const [showMasterTable, setShowMasterTable] = useState(true);
   const [showIndividualTable, setShowIndividualTable] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [masterImageDetails, setMasterImageDetails] = useState([]);
   const [individualDetails, setIndividualDetails] = useState([]);
+  const [individualDetailById, setIndividualDetailById] = useState([]);
+  const [masterDetailById, setMasterDetailById] = useState([]);
+
   const [editing, setEditing] = useState(false);
   const [editedData, setEditedData] = useState(null);
 
@@ -39,7 +44,7 @@ const Main = () => {
     const fetchMasterImages = async () => {
       try {
         const data = await getAllMasterImages();
-        setMasterImageDetails(data);
+         setMasterImageDetails(data);
       } catch (error) {
         console.error("Error fetching master images:", error);
       }
@@ -61,6 +66,15 @@ const Main = () => {
     fetchIndividualImages();
   }, []);
 
+  useEffect(() => {
+    const { state } = navigate;
+    if (state && state.createdData) {
+      // Assuming createdData contains the new individual image details
+      const newIndividualDetails = [...individualDetails, state.createdData];
+      setIndividualDetails(newIndividualDetails);
+    }
+  }, [navigate]);
+
   const handleMasterClick = () => {
     setShowMasterTable(true);
     setShowIndividualTable(false);
@@ -72,13 +86,24 @@ const Main = () => {
   };
 
   const handleChange = () => {
-    setType('create'); 
-    navigate("/dynamic-crop", { state: { type:'create' } });
+    navigate("/dynamic-crop");
   };
 
   const fetchIndividualDetailsById = async (id) => {
     try {
       const data = await individualgetbyId(id);
+      setIndividualDetailById(data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching individual details by ID:", error);
+      return null;
+    }
+  };
+
+  const fetchMasterDetailsById = async (id) => {
+    try {
+      const data = await maingetbyId(id);
+      setMasterDetailById(data);
       return data;
     } catch (error) {
       console.error("Error fetching individual details by ID:", error);
@@ -95,7 +120,7 @@ const Main = () => {
     }
   };
 
-/*   const handleIndividualEditClick = async (id) => {
+  /*   const handleIndividualEditClick = async (id) => {
     try {
       const detail = await fetchIndividualDetailsById(id);
       if (!detail) {
@@ -112,33 +137,28 @@ const Main = () => {
     }
   }; */
   const handleIndividualEditClick = async (id) => {
-    try {
-      await fetchIndividualDetailsById(id);
-      const detail = individualDetails.find((detail) => detail.id === id);
-      if (!detail) {
-        console.error("Individual detail not found");
-        return;
-      }
-  
-      const updatedData = {
-        mainImageId: detail.mainImageId,
-        mainImage:detail.mainImage,
-        axisX: detail.axisX,
-        axisY: detail.axisY,
-        width: detail.width,
-        height: detail.height,
-        tags: detail.tags,
-        color: detail.color,
-        fabric: detail.fabric,
-      };
-  
-      // Navigate to /dynamic-crop with the state object
-      navigate("/dynamic-crop", { state: { type: 'edit', id, updatedData } });
-    } catch (error) {
-      console.error("Error fetching/updating individual image:", error);
+    const detail = await individualgetbyId(id);
+    console.log(id, "detail", detail);
+    if (!detail) {
+      console.error("Individual detail not found");
+      return;
     }
+
+    const updatedData = {
+      mainImageId: detail.mainImageId,
+      mainImage: detail.mainImage,
+      axisX: detail.axisX,
+      axisY: detail.axisY,
+      width: detail.width,
+      height: detail.height,
+      tags: detail.tags,
+      color: detail.color,
+      fabric: detail.fabric,
+    };
+
+    // Navigate to /dynamic-crop with the state object
+    navigate("/dynamic-crop", { state: { type: "edit", id, detail } });
   };
-  
 
   const handleDelClick = async (id) => {
     try {
@@ -194,6 +214,26 @@ const Main = () => {
       .includes(searchQuery.toLowerCase())
   );
 
+  const handleAddIconClick = async () => {
+    navigate("/dynamic-crop");
+  };
+
+  const handleMasterEditClick = async (id) => {
+    debugger;
+    try {
+      const detail = await fetchMasterDetailsById(id);
+      if (!detail) {
+        console.error("Individual detail not found");
+        return;
+      }
+
+      // Navigate to /dynamic-crop with the state object
+      navigate("/dynamic-crop", { state: { type: "edit", id, detail } });
+    } catch (error) {
+      console.error("Error fetching/updating individual image:", error);
+    }
+  };
+
   return (
     <CCard>
       <CCardHeader>
@@ -217,7 +257,7 @@ const Main = () => {
               border: "#0096FF",
               backgroundColor: "#0096FF",
             }}
-            onClick={handleChange}
+            onClick={handleAddIconClick}
           >
             <AddIcon style={{ textSize: "50px", color: "#FFFFFF" }} />
           </button>
@@ -286,9 +326,11 @@ const Main = () => {
                 style={{ backgroundColor: "#0096FF", fontWeight: "bold" }}
               >
                 <CTableDataCell>S.No</CTableDataCell>
-                <CTableDataCell>Image No</CTableDataCell>
+                <CTableDataCell>Main Image No</CTableDataCell>{" "}
+                <CTableDataCell>Main Image Name</CTableDataCell>
+                <CTableDataCell>Image </CTableDataCell>
                 <CTableDataCell>No of Crops</CTableDataCell>
-                <CTableDataCell>Delete</CTableDataCell>
+                <CTableDataCell>Action</CTableDataCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -305,8 +347,23 @@ const Main = () => {
                   <CTableDataCell
                     style={{ paddingLeft: "25px", verticalAlign: "middle" }}
                   >
-                    {detail.id}{" "}
+                    {detail.mainImageId}
                   </CTableDataCell>
+                  <CTableDataCell
+                    style={{ paddingLeft: "25px", verticalAlign: "middle" }}
+                  >
+                    {detail.mainImageName}
+                  </CTableDataCell>
+                  <CTableDataCell
+                    style={{ paddingLeft: "25px", verticalAlign: "middle" }}
+                  >
+                    <img
+                      style={{ width: "250px" }}
+                      src={`${detail.mainImage}`}
+                      alt="mainImage"
+                    />
+                  </CTableDataCell>
+
                   <CTableDataCell
                     style={{ paddingLeft: "25px", verticalAlign: "middle" }}
                   >
@@ -315,7 +372,14 @@ const Main = () => {
                   <CTableDataCell
                     style={{ paddingLeft: "25px", verticalAlign: "middle" }}
                   >
-                    <DeleteIcon onClick={() => handleDeleteClick(detail.id)} />
+                    <ModeEditOutlineIcon
+                      onClick={() => {
+                        handleMasterEditClick(detail.mainImageId);
+                      }}
+                    />
+                    <DeleteIcon
+                      onClick={() => handleDeleteClick(detail.mainImageId)}
+                    />
                   </CTableDataCell>
                 </CTableRow>
               ))}
@@ -401,7 +465,6 @@ const Main = () => {
 
 export default Main;
 
-
 // import React, { useState, useEffect } from "react";
 // import AddIcon from "@mui/icons-material/Add";
 // import { useNavigate } from "react-router-dom";
@@ -464,17 +527,17 @@ export default Main;
 //   const handleMasterClick = () => {
 //     setShowMasterTable(true);
 //     setShowIndividualTable(false);
-    
+
 //   };
 
 //   const handleIndividualClick = () => {
 //     setShowMasterTable(false);
 //     setShowIndividualTable(true);
-    
+
 //   };
 
 //   const handleChange = () => {
-//     setType('create'); 
+//     setType('create');
 //     navigate("/dynamic-crop", { state: { type:'create' } });
 //   };
 //   // Function to fetch individual image details by ID
@@ -515,7 +578,7 @@ export default Main;
 //         color: detail.color,
 //         fabric: detail.fabric,
 //       };
-//       setType('edit'); 
+//       setType('edit');
 //       navigate("/dynamic-crop", { state: { id, updatedData, type: 'edit' } });
 //     } catch (error) {
 //       console.error("Error fetching/updating individual image:", error);

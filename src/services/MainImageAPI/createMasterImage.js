@@ -1,11 +1,11 @@
-export const createMasterImage = async () => {
+export const createMasterImage = async (payload) => {
   try {
     const response = await fetch("http://localhost:8000/api/v1/master/create", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({}) // Add any payload data if needed
+      body: JSON.stringify(payload) // Add any payload data if needed
     });
     if (!response.ok) {
       throw new Error("Network response was not ok");
