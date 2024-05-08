@@ -133,15 +133,28 @@ const DynamicValues = () => {
     });
 };
 
-  const handleSaveCreate = async () => {
+const handleSaveCreate = async () => {
+  try {
+    let totalCrops = 0;
+    images.forEach((image, index) => {
+      console.log("Main Image Index:", index);
+      console.log("Total Crops Done:", (croppedImages[index]?.length || 0) + 1);
+      const cropCount = (croppedImages[index]?.length || 0) + 1;
+      totalCrops += cropCount;
+    });
+
     const payload ={
-      noOfCrops:croppedImages.length,
-      file:setImages,
-      mainArticleName:setName,
-    }
-    createMasterImage(payload)
+      noOfCrops: totalCrops,
+      file: setImages,
+      mainArticleName: formData.mainArticleName,
+    };
+    createMasterImage(payload);
     handleIndividalCreate();
-  };
+  } catch (error) {
+    console.error("Error saving images:", error);
+  }
+};
+
 
   const handleIndividalCreate = async () => {
     try {
@@ -437,6 +450,8 @@ const DynamicValues = () => {
 
     setCropStart(null);
     setCropEnd(null);
+
+    console.log("Total Crops Done:", (croppedImages[index]?.length || 0) + 1);
   };
 
   const handleChange = () => {
@@ -476,6 +491,8 @@ const DynamicValues = () => {
       return updatedImages;
     });
   };
+
+  
   return (
     <CCard>
       <CCardHeader>
